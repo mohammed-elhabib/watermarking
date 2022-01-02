@@ -11,21 +11,39 @@
 # print()
 # for row in data:
 #   print(' '.join(chars[int(value*scale)] for value in row))
+import cv2
+import numpy
 import numpy as np
 from PIL import Image
 
-from read_text import get_watermark
+from nose.salt_pepper import add_noise
+from read_text import get_watermark, get_watermark_imge
 from random import randint
+#img = cv2.imread('img.png',
+               #  cv2.IMREAD_GRAYSCALE)
 
-img = Image.open('img.png').convert('L')  # convert image to 8-bit grayscale
+# Storing the image
+#cv2.imwrite('salt-and-pepper-img.png',
+        #    add_noise(img))
+img = Image.open('img.png').convert('L')
+#img_with_nose = Image.open('salt-and-pepper-img.png').convert('L')
+img_with_nose = Image.open('img_rate.png').convert('L')
+
+#add_noise(img)
+# convert image to 8-bit grayscale
 WIDTH, HEIGHT = img.size
 
-data = list(img.getdata())  # convert image data to a list of integers
+data = list(img.getdata())
+# convert image data to a list of integers
 # convert that to 2D list (list of lists of integers)
 data = [data[offset:offset + WIDTH] for offset in range(0, WIDTH * HEIGHT, WIDTH)]
+WIDTH_WITH_NOSE, HEIGHT_WITH_NOSE = img_with_nose.size
 
-watermark = get_watermark()
+data_with_nose = list(img_with_nose.getdata())  # convert image data to a list of integers
+# convert that to 2D list (list of lists of integers)
+data_with_nose = [data_with_nose[offset:offset + WIDTH_WITH_NOSE] for offset in range(0, WIDTH_WITH_NOSE * HEIGHT_WITH_NOSE, WIDTH_WITH_NOSE)]
 
+watermark,WIDTH_W,HEIGHT_W = get_watermark_imge()
 
 class Dim:
     def __init__(self, value, row, col, frequency, diff=0):
@@ -77,10 +95,16 @@ def watermarked(image_array, watermark_list):
 
 
 def extract_watermark(image_array, watermark_table):
-    watermark = [chr(image_array[wtr.row][wtr.col]) for wtr in watermark_table]
-    print(''.join(watermark))
-
+    watermark = [image_array[wtr.row][wtr.col] for wtr in watermark_table]
+    return watermark
 
 watermark_table = watermarked(data, watermark)
-[print(dim.to_string()) for dim in watermark_table]
-extract_watermark(data, watermark_table)
+extract_watermark= extract_watermark(data_with_nose, watermark_table)
+extract_watermark = [extract_watermark[offset:offset + WIDTH_W] for offset in range(0, WIDTH_W * HEIGHT_W, WIDTH_W)]
+#img2 = Image.fromarray(extract_watermark, 'L')
+#img2.show()
+# Convert the pixels into an array using numpy
+# Use PIL to create an image from the new array of pixels
+new_image = Image.fromarray(numpy.asarray(extract_watermark))
+new_image.save('new.png')
+new_image.show()
